@@ -1,43 +1,44 @@
-from telebot import types
-import telebot
+import config
+from database import SQLighter
+import asyncio
+import logging
+import json
+from aiogram import Bot, Dispatcher, types, F
+from aiogram.types import KeyboardButton, WebAppInfo, InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.utils.keyboard import ReplyKeyboardBuilder
+from aiogram.enums.content_type import ContentType
+from aiogram.filters import Command
+from aiogram.enums.parse_mode import ParseMode
 
-bot = telebot.TeleBot('7846844504:AAHNWi2W3P-GDy7oiod7CbBvhyHPRDQlh4E')
+# Логирование
+logging.basicConfig(level=logging.INFO)
+# Обработка базы
 
-def webAppKeyboard(): #создание клавиатуры с webapp кнопкой
-   keyboard = types.ReplyKeyboardMarkup(row_width=1) #создаем клавиатуру
-   webAppTest = types.WebAppInfo("https://telegram.mihailgok.ru") #создаем webappinfo - формат хранения url
-   webAppGame = types.WebAppInfo("https://games.mihailgok.ru") #создаем webappinfo - формат хранения url
-   one_butt = types.KeyboardButton(text="Тестовая страница", web_app=webAppTest) #создаем кнопку типа webapp
-   two_butt = types.KeyboardButton(text="Игра", web_app=webAppGame) #создаем кнопку типа webapp
-   keyboard.add(one_butt, two_butt) #добавляем кнопки в клавиатуру
+db = SQLighter(config.database_name)
+print(db.select_single("test1")[1])
+if db.select_single("test1")[1] != "test1":
+   db.insert_new("'test1'", "'redricklaw'", 220)
+# Обработка бота
+bot = Bot(token=config.token)
+dp = Dispatcher()
 
-   return keyboard #возвращаем клавиатуру
+@dp.message(Command("start"))
+async def start(message: types.Message):
+    webAppInfo = types.WebAppInfo(url="https://redricklaw.github.io/TgZeroOne_bot/")
+    builder = ReplyKeyboardBuilder()
+    builder.add(types.KeyboardButton(text='Play!', web_app=webAppInfo))
+    
+    await message.answer(text='Привет!', reply_markup=builder.as_markup())
 
-def webAppKeyboardInline(): #создание inline-клавиатуры с webapp кнопкой
-   keyboard = types.InlineKeyboardMarkup(row_width=1) #создаем клавиатуру inline
-   webApp = types.WebAppInfo("https://telegram.mihailgok.ru") #создаем webappinfo - формат хранения url
-   one = types.InlineKeyboardButton(text="Веб приложение", web_app=webApp) #создаем кнопку типа webapp
-   keyboard.add(one) #добавляем кнопку в клавиатуру
+@dp.message(F.content_type == ContentType.WEB_APP_DATA)
+async def parse_data(message: types.Message):
+    data = json.loads(message.web_app_data.data)
+    await message.answer(f'<b>{data["title"]}</b>\n\n<code>{data["desc"]}</code>\n\n{data["text"]}', parse_mode=ParseMode.HTML)
 
-   return keyboard #возвращаем клавиатуру
-
-
-@bot.message_handler(commands=['start']) #обрабатываем команду старт
-def start_fun(message):
-   bot.send_message( message.chat.id, 'Привет, я бот для проверки телеграмм webapps!)\nЗапустить тестовые страницы можно нажав на кнопки.', parse_mode="Markdown", reply_markup=webAppKeyboard()) #отправляем сообщение с нужной клавиатурой
-
-
-@bot.message_handler(content_types="text")
-def new_mes(message):
-   start_fun(message)
-
-
-@bot.message_handler(content_types="web_app_data") #получаем отправленные данные 
-def answer(webAppMes):
-   print(webAppMes) #вся информация о сообщении
-   print(webAppMes.web_app_data.data) #конкретно то что мы передали в бота
-   bot.send_message(webAppMes.chat.id, f"получили инофрмацию из веб-приложения: {webAppMes.web_app_data.data}") 
-   #отправляем сообщение в ответ на отправку данных из веб-приложения 
-
-if __name__ == '__main__':
-   bot.infinity_polling()
+async def main():
+    await bot.delete_webhook(drop_pending_updates=True)
+    await dp.start_polling(bot)
+    
+db.close()
+if __name__ == "__main__":
+    asyncio.run(main())
