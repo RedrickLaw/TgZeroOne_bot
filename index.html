@@ -18,40 +18,39 @@
             flex-direction: column;
             justify-content: space-between;
         }
-        .buttons {
+        .points {
+            margin-top: 20px;
+        }
+        .circle-image {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            margin: auto;
+        }
+        .button-container {
             display: flex;
             justify-content: center;
             margin-bottom: 20px;
         }
         .button {
-            margin: 0 10px;
-            padding: 10px 20px;
-            background-color: gray;
+            background-color: white;
+            color: black;
             border: none;
-            color: white;
+            padding: 15px 30px;
+            margin: 0 10px;
             cursor: pointer;
+            font-size: 16px;
         }
-        .image {
-            margin-top: 20px;
-        }
-
-      #usercard{
-         text-align: center;
-      }
    </style>
 </head>
 
 <body>
-   <div id="usercard"> <!--Карта профиля, человека, который к нам обратился-->
-   <button class="button" id="theButton">Post to Python</button>
-   <div class="username">Username</div>
-    <div class="image">
-        <img src="your-image-url.jpg" alt="Centered Image">
-    </div>
-    <div class="buttons">
-        <button class="button">Button 1</button>
-        <button class="button">Button 2</button>
-        <button class="button">Button 3</button>
+   <div class="points">Current Points: 100</div>
+    <img src="circle-image.png" alt="Circle Image" class="circle-image">
+    <div class="button-container">
+        <button class="button">Play</button>
+        <button class="button">Tasks</button>
+        <button class="button">Rating</button>
     </div>
 </body>
 
