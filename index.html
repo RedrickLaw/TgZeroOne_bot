@@ -8,33 +8,32 @@
    <script src="https://telegram.org/js/telegram-web-app.js"></script> <!--Подключаем скрипт от телеграм-->
 
    <style>
-      body{
-         color: var(--tg-theme-text-color);
-         background: var(--tg-theme-bg-color);
-         display: flex;
-         flex-direction: column;
-         align-items: center;
-         font-size: 18px;
-      }
-
-      .hint{
-         color: var(--tg-theme-hint-color);
-      }
-
-      .link{
-         color: var(--tg-theme-link-color);
-      }
-
-      .button{
-         background: var(--tg-theme-button-color);
-         color: var(--tg-theme-button-text-color);
-         border: none;
-         font-size: 18px;
-      }
-
-      .button:not(:last-child){
-         margin-bottom: 20px
-      }
+      body {
+            background-color: black;
+            color: white;
+            text-align: center;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .buttons {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .button {
+            margin: 0 10px;
+            padding: 10px 20px;
+            background-color: gray;
+            border: none;
+            color: white;
+            cursor: pointer;
+        }
+        .image {
+            margin-top: 20px;
+        }
 
       #usercard{
          text-align: center;
@@ -44,8 +43,16 @@
 
 <body>
    <div id="usercard"> <!--Карта профиля, человека, который к нам обратился-->
-   </div>
-   <input type="button" value="Send info" onclick="submit()">
+   <button class="button" id="theButton">Post to Python</button>
+   <div class="username">Username</div>
+    <div class="image">
+        <img src="your-image-url.jpg" alt="Centered Image">
+    </div>
+    <div class="buttons">
+        <button class="button">Button 1</button>
+        <button class="button">Button 2</button>
+        <button class="button">Button 3</button>
+    </div>
 </body>
 
 <script>
@@ -69,13 +76,6 @@
    let tg = window.Telegram.WebApp; //получаем объект webapp телеграма 
 
    tg.expand(); //расширяем на все окно  
-
-   let btn = document.getElementById("btn"); //получаем кнопку скрыть/показать 
-
-   btn.addEventListener('click', function(){ //вешаем событие на нажатие html-кнопки
-      
-   });
-
 
    Telegram.WebApp.onEvent('mainButtonClicked', function(){
       tg.sendData("test"); 
