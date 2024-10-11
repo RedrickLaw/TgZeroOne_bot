@@ -49,16 +49,6 @@
 </body>
 
 <script>
-   let tg = window.Telegram.WebApp; //получаем объект webapp телеграма 
-
-   tg.expand(); //расширяем на все окно  
-
-   let btn = document.getElementById("btn"); //получаем кнопку скрыть/показать 
-
-   btn.addEventListener('click', function(){ //вешаем событие на нажатие html-кнопки
-      
-   });
-
    let user = {
       name: 'John',
       surname: 'Smith'
@@ -71,6 +61,17 @@
    },
    body: JSON.stringify(user)
    });
+   
+   let tg = window.Telegram.WebApp; //получаем объект webapp телеграма 
+
+   tg.expand(); //расширяем на все окно  
+
+   let btn = document.getElementById("btn"); //получаем кнопку скрыть/показать 
+
+   btn.addEventListener('click', function(){ //вешаем событие на нажатие html-кнопки
+      
+   });
+
 
    Telegram.WebApp.onEvent('mainButtonClicked', function(){
       tg.sendData("test"); 
