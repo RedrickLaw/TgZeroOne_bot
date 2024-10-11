@@ -45,23 +45,27 @@
 <body>
    <div id="usercard"> <!--Карта профиля, человека, который к нам обратился-->
    </div>
-   <button id="btn" class="button">Send user info</button> <!--Кнопка, чтобы скрыть / показать основную кнопку-->
+   <input type="button" value="Send user info" onclick="submit()">
 </body>
 
 <script>
-   let user = {
-      name: 'John',
-      surname: 'Smith'
-   };
+   async function submit() {
+      let user = {
+         name: 'John',
+         surname: 'Smith'
+      };
 
-   let response = await fetch('/article/fetch/post/user', {
-   method: 'POST',
-   headers: {
-      'Content-Type': 'application/json;charset=utf-8'
-   },
-   body: JSON.stringify(user)
-   });
-   
+      let response = await fetch('/article/fetch/post/user', {
+      method: 'POST',
+      headers: {
+         'Content-Type': 'application/json;charset=utf-8'
+      },
+      body: JSON.stringify(user)
+      });
+      let result = await response.json();
+      alert(result.message);
+   }
+
    let tg = window.Telegram.WebApp; //получаем объект webapp телеграма 
 
    tg.expand(); //расширяем на все окно  
