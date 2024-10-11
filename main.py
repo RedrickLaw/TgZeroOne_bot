@@ -20,6 +20,9 @@ def postME():
    data = jsonify(data)
    return data
 
+if __name__ == "__main__": 
+   app.run(debug=True)
+   
 # Логирование
 logging.basicConfig(level=logging.INFO)
 # Обработка базы
@@ -51,5 +54,4 @@ async def main():
     
 db.close()
 if __name__ == "__main__":
-   app.run(debug=True)
    asyncio.run(main())
