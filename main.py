@@ -1,5 +1,6 @@
 import config
 from database import SQLighter
+import aiohttp
 import asyncio
 import logging
 import json
@@ -12,12 +13,13 @@ from aiogram.enums.parse_mode import ParseMode
 
 # Логирование
 logging.basicConfig(level=logging.INFO)
-# Обработка базы
 
+# Обработка базы
 db = SQLighter(config.database_name)
 print(db.select_single("test1")[1])
 if db.select_single("test1")[1] != "test1":
    db.insert_new("'test1'", "'redricklaw'", 220)
+   
 # Обработка бота
 bot = Bot(token=config.token)
 dp = Dispatcher()
@@ -36,8 +38,14 @@ async def parse_data(message: types.Message):
     await message.answer(f'<b>{data["title"]}</b>\n\n<code>{data["desc"]}</code>\n\n{data["text"]}', parse_mode=ParseMode.HTML)
 
 async def main():
-    await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot)
+   async with aiohttp.ClientSession() as session:
+      async with session.get('http://python.org') as response:
+         print("Status:", response.status)
+         print("Content-type:", response.headers['content-type'])
+         html = await response.text()
+         print("Body:", html[:15], "...")
+   await bot.delete_webhook(drop_pending_updates=True)
+   await dp.start_polling(bot)
     
 db.close()
 if __name__ == "__main__":
