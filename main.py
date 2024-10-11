@@ -9,20 +9,7 @@ from aiogram.utils.keyboard import ReplyKeyboardBuilder
 from aiogram.enums.content_type import ContentType
 from aiogram.filters import Command
 from aiogram.enums.parse_mode import ParseMode
-from flask import Flask, request, jsonify
-from flask_cors import CORS
 
-app = Flask(__name__)
-cors = CORS(app)
-@app.route("/receiver", methods=["POST"])
-def postME():
-   data = request.get_json()
-   data = jsonify(data)
-   return data
-
-if __name__ == "__main__": 
-   app.run(debug=True)
-   
 # Логирование
 logging.basicConfig(level=logging.INFO)
 # Обработка базы
