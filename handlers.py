@@ -10,12 +10,11 @@ from aiogram.types import (
 
 my_router = Router()
 
-
 @my_router.message(CommandStart())
 async def command_start(message: Message, bot: Bot, base_url: str):
     await bot.set_chat_menu_button(
         chat_id=message.chat.id,
-        menu_button=MenuButtonWebApp(text="Open Menu", web_app=WebAppInfo(url=f"{base_url}/demo")),
+        menu_button=MenuButtonWebApp(text="Play", web_app=WebAppInfo(url=f"{base_url}")),
     )
     await message.answer("""Hi!\nSend me any type of message to start.\nOr just send /webview""")
 
@@ -28,7 +27,7 @@ async def command_webview(message: Message, base_url: str):
             inline_keyboard=[
                 [
                     InlineKeyboardButton(
-                        text="Open Webview", web_app=WebAppInfo(url=f"{base_url}/demo")
+                        text="Open Webview", web_app=WebAppInfo(url=f"{base_url}")
                     )
                 ]
             ]
@@ -42,7 +41,7 @@ async def echo_all(message: Message, base_url: str):
         "Test webview",
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=[
-                [InlineKeyboardButton(text="Open", web_app=WebAppInfo(url=f"{base_url}/demo"))]
+                [InlineKeyboardButton(text="Open", web_app=WebAppInfo(url=f"{base_url}"))]
             ]
         ),
     )

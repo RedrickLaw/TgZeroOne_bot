@@ -202,11 +202,11 @@ async def init_db(app: web.Application) -> AsyncIterator[None]:
     await db.close()
 
 
-async def init_app() -> web.Application:
+async def init_app():
     app = web.Application()
     app.add_routes(router)
     app.cleanup_ctx.append(init_db)
-    return app
+    web.run_app(app)
 
 
 # def try_make_db() -> None:

@@ -231,7 +231,7 @@
         }
         $('button').prop('disabled', true);
         $('#btn_status').text('Sending...').removeClass('ok err').show();
-        $.ajax('/demo/sendMessage', {
+        $.ajax('/api/sendMessage', {
             type: 'POST',
             data: {
                 _auth: initData,
@@ -321,7 +321,7 @@
     $('#text_field').focus();
     if (initDataUnsafe.query_id && initData) {
         $('#webview_data_status').show();
-        $.ajax('/demo/checkData', {
+        $.ajax('/api/checkData', {
             type: 'POST',
             data: {_auth: initData},
             dataType: 'json',
