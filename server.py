@@ -231,5 +231,4 @@ async def init_app() -> web.Application:
 
 # try_make_db()
 
-
 web.run_app(init_app())
