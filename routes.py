@@ -111,26 +111,31 @@ async def api_new_user(request: web.Request) -> web.Response:
 @router.get("/api/{user_id}")
 @handle_json_error
 async def api_get_user(request: web.Request) -> web.Response:
-    user_id = request.match_info["user_id"]
     db = request.config_dict["DB"]
-    user = await fetch_user(db, user_id)
-    return web.json_response(
-        {
-            "status": "ok",
-            "data": {
-                "user_id": user["user_id"],
-                "first_name": user["first_name"],
-                "last_name": user["last_name"],
-                "username": user["username"],
-                "language_code": user["language_code"],
-                "is_premium": user["is_premium"],
-                "is_bot": user["is_bot"],
-                "added_to_attachment_menu": user["added_to_attachment_menu"],
-                "created_at": user["created_at"],
-                "updated_at": user["updated_at"]
-            },
-        }
-    )
+    bot: Bot = request.app["bot"]
+    data = await request.post()
+    print(data["_auth"])
+    if check_webapp_signature(bot.token, data["_auth"]):
+        async with db.execute(
+            "SELECT * FROM game WHERE user_id = '{user_id}';"
+        ) as cursor:
+            user = await cursor.fetchone()
+            if user is None:
+                print("User_ID {user_id} doesn't exist")
+                async with db.execute("INSERT INTO game (user_id) VALUES ('{user_id}');") as cursor:
+                    user = cursor.fetchone()
+                await db.commit()
+        return web.json_response(
+            {
+                "status": "ok",
+                "data": {
+                    "user_id": user["user_id"],
+                    "level": user["level"],
+                    "coins": user["coins"]
+                },
+            }
+        )
+    return web.json_response({"ok": False, "err": "Unauthorized"}, status=401)
 
 # @router.delete("/api/{user_id}")
 # @handle_json_error
@@ -189,7 +194,6 @@ async def api_update_post(request: web.Request) -> web.Response:
 async def check_data_handler(request: web.Request):
     bot: Bot = request.app["bot"]
     data = await request.post()
-    print(data["_auth"])
     if check_webapp_signature(bot.token, data["_auth"]):
         return web.json_response({"ok": True})
     return web.json_response({"ok": False, "err": "Unauthorized"}, status=401)

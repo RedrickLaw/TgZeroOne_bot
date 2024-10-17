@@ -40,7 +40,7 @@
             font-size: 14px;
             margin: 15px 0;
             padding: 12px 20px;
-            border: none;
+            border: 1px solid black;
             border-radius: 4px;
             background-color: var(--tg-theme-button-color, #50a8eb);
             color: var(--tg-theme-button-text-color, #ffffff);
@@ -172,47 +172,59 @@
         .viewport_stable_border:after {
             border-color: green;
         }
+
+        #footer {  
+            display: flex;
+            justify-content: center;
+            position: fixed;  
+            bottom: 0;  
+            z-index: 100;  
+            text-align:center;
+        }
     </style>
 </head>
-<body style="visibility: hidden;">
+<body>
 <section>
-    <button id="main_btn" onclick="sendMessage('');">Send «Hello, World!»</button>
-    <button id="with_webview_btn" onclick="sendMessage('', true);">
-        Send «Hello, World!» with inline webview button
-    </button>
-    <button onclick="webviewExpand();">Expand Webview</button>
-    <button onclick="toggleMainButton(this);">Hide Main Button</button>
-    <div id="btn_status" class="hint" style="display: none;">
-    </div>
-    <p>Test links:</p>
-    <ul>
-        <li><a id="regular_link" href="?nextpage=1">Regular link #1</a> (opens inside webview)</li>
-        <li><a href="https://telegram.org/" target="_blank">target="_blank" link</a> (opens outside
-            webview)
-        </li>
-        <li><a href="javascript:window.open('https://telegram.org/');">window.open() link</a>
-            (opens outside webview)
-        </li>
-        <li><a href="https://t.me/like">LikeBot t.me link</a> (opens inside Telegram app)</li>
-        <li><a href="tg://resolve?domain=vote">VoteBot tg:// link</a> (does not open)</li>
-    </ul>
-    <p>Test permissions:</p>
-    <ul>
-        <li><a href="javascript:;" onclick="return requestLocation(this);">Request Location</a>
-            <span></span></li>
-        <li><a href="javascript:;" onclick="return requestVideo(this);">Request Video</a>
-            <span></span></li>
-        <li><a href="javascript:;" onclick="return requestAudio(this);">Request Audio</a>
-            <span></span></li>
-    </ul>
+    <span id="username"></span>
+    <button id="new_level_btn" onclick="new_level();">Повысить уровень</button>
+    <button id="friends_btn" onclick="friends();">Друзья</button>
+    <span id="coins"></span>
+    <button id="claim_btn" onclick="claim();">Оставшееся время: {}</button>
     <pre><code id="webview_data"></code></pre>
-    <div class="hint">
-        Data passed to webview.
-        <span id="webview_data_status" style="display: none;">Checking hash...</span>
+    <div id="footer">
+        <button id="main_view_btn" onclick="main_view();">Главный экран</button>
+        <button id="tasks_view_btn" onclick="tasks_view();">Задания</button>
+        <button id="airdrop_view_btn" onclick="airdrop_view();">Аирдроп</button>
     </div>
-    <pre><code id="theme_data"></code></pre>
-    <div class="hint">
-        Theme params
+    <div style="display: none;">
+        <button id="main_btn" onclick="sendMessage('');">Send «Hello, World!»</button>
+        <button id="with_webview_btn" onclick="sendMessage('', true);">
+            Send «Hello, World!» with inline webview button
+        </button>
+        <button onclick="webviewExpand();">Expand Webview</button>
+        <button onclick="toggleMainButton(this);">Hide Main Button</button>
+        <div id="btn_status" class="hint" style="display: none;">
+        </div>
+        <p>Test links:</p>
+        <ul>
+            <li><a id="regular_link" href="?nextpage=1">Regular link #1</a> (opens inside webview)</li>
+            <li><a href="https://telegram.org/" target="_blank">target="_blank" link</a> (opens outside
+                webview)
+            </li>
+            <li><a href="javascript:window.open('https://telegram.org/');">window.open() link</a>
+                (opens outside webview)
+            </li>
+            <li><a href="https://t.me/like">LikeBot t.me link</a> (opens inside Telegram app)</li>
+            <li><a href="tg://resolve?domain=vote">VoteBot tg:// link</a> (does not open)</li>
+        </ul>
+        <div class="hint">
+            Data passed to webview.
+            <span id="webview_data_status" style="display: none;">Checking hash...</span>
+        </div>
+        <pre><code id="theme_data"></code></pre>
+        <div class="hint">
+            Theme params
+        </div>
     </div>
 </section>
 <div class="viewport_border"></div>
@@ -220,10 +232,36 @@
 <script src="https://webappcontent.telegram.org/js/jquery.min.js"></script>
 <script>
     Telegram.WebApp.ready();
-
+    Telegram.WebApp.setBottomBarColor("#00FFFF");
     var initData = Telegram.WebApp.initData || '';
     var initDataUnsafe = Telegram.WebApp.initDataUnsafe || {};
+    var user_id = initDataUnsafe["user"]["id"];
 
+    $('#username').text(initDataUnsafe["user"]["first_name"] + ' ' + initDataUnsafe["user"]["last_name"]);
+    $('#webview_data').html(JSON.stringify(initDataUnsafe, null, 2));
+
+    if (initDataUnsafe.query_id && initData) {
+        $.ajax("/api/" + user_id, {
+            type: 'GET',
+            data: {_auth: initData},
+            dataType: 'json',
+            success: function (result) {
+                if (result.status == "ok") {
+                    alert("all good");
+                } else {
+                    alert(result.response.description);
+                }
+            },
+            error: function (xhr) {
+                alert(result.response.description);
+            }
+        });
+    }
+    function new_level(){
+
+        return;
+    }
+    
     function sendMessage(msg_id, with_webview) {
         if (!initDataUnsafe.query_id) {
             alert('WebViewQueryId not defined');
@@ -269,45 +307,6 @@
         Telegram.WebApp.close();
     }
 
-    function requestLocation(el) {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(function (position) {
-                $(el).next('span').html('(' + position.coords.latitude + ', ' + position.coords.longitude + ')').attr('class', 'ok');
-            });
-        } else {
-            $(el).next('span').html('Geolocation is not supported in this browser.').attr('class', 'err');
-        }
-        return false;
-    }
-
-    function requestVideo(el) {
-        if (navigator.mediaDevices) {
-            navigator.mediaDevices.getUserMedia({
-                audio: false,
-                video: true
-            }).then(function (stream) {
-                $(el).next('span').html('(Access granted)').attr('class', 'ok');
-            });
-        } else {
-            $(el).next('span').html('Media devices is not supported in this browser.').attr('class', 'err');
-        }
-        return false;
-    }
-
-    function requestAudio(el) {
-        if (navigator.mediaDevices) {
-            navigator.mediaDevices.getUserMedia({
-                audio: true,
-                video: false
-            }).then(function (stream) {
-                $(el).next('span').html('(Access granted)').attr('class', 'ok');
-            });
-        } else {
-            $(el).next('span').html('Media devices is not supported in this browser.').attr('class', 'err');
-        }
-        return false;
-    }
-
     Telegram.WebApp.onEvent('themeChanged', function () {
         $('#theme_data').html(JSON.stringify(Telegram.WebApp.themeParams, null, 2));
     });
@@ -315,7 +314,6 @@
     $('#main_btn').toggle(!!initDataUnsafe.query_id);
     $('#with_webview_btn').toggle(!!initDataUnsafe.query_id && !initDataUnsafe.receiver);
     // $('#data_btn').toggle(!initDataUnsafe.query_id || !initDataUnsafe.receiver);
-    $('#webview_data').html(JSON.stringify(initDataUnsafe, null, 2));
     $('#theme_data').html(JSON.stringify(Telegram.WebApp.themeParams, null, 2));
     $('#regular_link').attr('href', $('#regular_link').attr('href') + location.hash);
     $('#text_field').focus();
