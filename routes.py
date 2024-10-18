@@ -59,7 +59,6 @@ async def root_handler(request: web.Request):
 @handle_json_error
 async def api_list_users(request: web.Request) -> web.Response:
     ret = []
-    print(request.config_dict["DB"])
     db = request.config_dict["DB"]
     async with db.execute("SELECT * FROM users") as cursor:
         async for row in cursor:
@@ -114,7 +113,7 @@ async def api_get_user(request: web.Request) -> web.Response:
     db = request.config_dict["DB"]
     bot: Bot = request.app["bot"]
     data = await request.post()
-    print(data["_auth"])
+    print(request.match_info)
     if check_webapp_signature(bot.token, data["_auth"]):
         async with db.execute(
             "SELECT * FROM game WHERE user_id = '{user_id}';"
