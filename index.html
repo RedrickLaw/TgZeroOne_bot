@@ -249,7 +249,7 @@
     // $('#webview_data').html(JSON.stringify(initDataUnsafe, null, 2));
 
     if (initDataUnsafe.query_id && initData) {
-        $.ajax("/user", {
+        $.ajax("/app", {
             type: 'GET',
             data: initData,
             dataType: 'json',
@@ -288,8 +288,26 @@
         return;
     }
 
+    function friends(){
+        $.ajax("/app/ref", {
+            type: 'GET',
+            data: initData,
+            dataType: 'json',
+            success: function (result) {
+                if (result.status) {
+                    $('#webview_data').html(JSON.stringify(result.link, null, 2));
+                } else {
+                    alert(result.description);
+                }
+            },
+            error: function (xhr) {
+                alert(result.description);
+            }
+        });
+    }
+
     function claim(){
-        $.ajax("/game/coins", {
+        $.ajax("/app/coins", {
             type: 'PATCH',
             data: {
                 user_id : initDataUnsafe.user.id,

@@ -16,6 +16,7 @@ from aiogram.types import (
     WebAppInfo,
 )
 from aiogram.utils.web_app import check_webapp_signature, safe_parse_webapp_init_data
+from aiogram.utils.deep_linking import create_start_link
 
 router = web.RouteTableDef()
 
@@ -38,6 +39,9 @@ async def fetch_user(db: aiosqlite.Connection, user_id: str) -> Dict[str, Any]:
             "created_at": user["created_at"],
             "updated_at": user["updated_at"]
         }
+    
+def calc_remaining_time(claim_time: int) -> int:
+    return int(time.time()) - claim_time
 
 def handle_json_error(
     func: Callable[[web.Request], Awaitable[web.Response]]
@@ -57,39 +61,7 @@ def handle_json_error(
 async def root_handler(request: web.Request):
     return web.FileResponse(Path(__file__).parent.resolve() / "index.html")
 
-@router.post("/api")
-@handle_json_error
-async def api_new_user(request: web.Request) -> web.Response:
-    user = await request.json()
-    db = request.config_dict["DB"]
-    async with db.execute(
-        "INSERT INTO users (user_id, first_name, last_name, username, language_code, is_premium, is_bot, added_to_attachment_menu, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        [user.user_id, user.first_name, user.last_name, user.username, user.language_code, user.is_premium, user.is_bot, user.added_to_attachment_menu, user.created_at, user.updated_at]
-    ) as cursor:
-        user_id = cursor.lastrowid
-    await db.commit()
-    return web.json_response(
-        {
-            "status": "ok",
-            "data": {
-                "user_id": user["user_id"],
-                "first_name": user["first_name"],
-                "last_name": user["last_name"],
-                "username": user["username"],
-                "language_code": user["language_code"],
-                "is_premium": user["is_premium"],
-                "is_bot": user["is_bot"],
-                "added_to_attachment_menu": user["added_to_attachment_menu"],
-                "created_at": user["created_at"],
-                "updated_at": user["updated_at"]
-            },
-        }
-    )
-
-def calc_remaining_time(claim_time: int) -> int:
-    return int(time.time()) - claim_time
-
-@router.get("/user")
+@router.get("/app")
 @handle_json_error
 async def api_get_user(request: web.Request) -> web.Response:
     user_id = json.loads(request.query["user"])["id"]
@@ -126,7 +98,46 @@ async def api_get_user(request: web.Request) -> web.Response:
         )
     return web.json_response({"status": False, "description": "Unauthorized"}, status=401)
 
-@router.patch("/game/coins")
+@router.get("/app/ref")
+@handle_json_error
+async def api_add_referral(request: web.Request) -> web.Response:
+    user_id = json.loads(request.query["user"])["id"]
+    db = request.config_dict["DB"]
+    bot: Bot = request.app["bot"]
+    link = await create_start_link(bot, 'foo', encode=True)
+    print(link)
+    # if check_webapp_signature(bot.token, request.query_string):
+    #     async with db.execute(f"SELECT * FROM game WHERE user_id = '{user_id}';") as cursor:
+    #         user = await cursor.fetchone()
+    #     if user is None:
+    #         print(f"User_ID {user_id} doesn't exist")
+    #         await db.execute(f"INSERT INTO game (user_id) VALUES ('{user_id}');")
+    #         await db.commit()
+    #         return web.json_response(
+    #             {
+    #                 "status": True,
+    #                 "data": {
+    #                     "user_id": user_id,
+    #                     "level": 0,
+    #                     "coins": 0,
+    #                     "claim_time": 0 
+    #                 },
+    #             }
+    #         )    
+    #     return web.json_response(
+    #         {
+    #             "status": True,
+    #             "data": {
+    #                 "user_id": user["user_id"],
+    #                 "level": user["level"],
+    #                 "coins": user["coins"],
+    #                 "claim_time": calc_remaining_time(user["claim_time"])
+    #             },
+    #         }
+    #     )
+    return web.json_response({"status": False, "description": "Unauthorized"}, status=401)
+
+@router.patch("/app/coins")
 @handle_json_error
 async def api_claim_coins(request: web.Request) -> web.Response:
     data = await request.post()
@@ -182,44 +193,6 @@ async def api_claim_coins(request: web.Request) -> web.Response:
 #     await db.commit()
 #     return web.json_response({"status": "ok", "id": user_id})
 
-@router.patch("/api/{user_id}")
-@handle_json_error
-async def api_update_post(request: web.Request) -> web.Response:
-    user_id = request.match_info["user_id"]
-    post = await request.json()
-    db = request.config_dict["DB"]
-    fields = {}
-    if "title" in post:
-        fields["title"] = post["title"]
-    if "text" in post:
-        fields["text"] = post["text"]
-    if "editor" in post:
-        fields["editor"] = post["editor"]
-    if fields:
-        field_names = ", ".join(f"{name} = ?" for name in fields)
-        field_values = list(fields.values())
-        await db.execute(
-            f"UPDATE users SET {field_names} WHERE user_id = {user_id}"
-        )
-        await db.commit()
-    user = await fetch_user(db, user_id)
-    return web.json_response(
-        {
-            "status": "ok",
-            "data": {
-                "user_id": user["user_id"],
-                "first_name": user["first_name"],
-                "last_name": user["last_name"],
-                "username": user["username"],
-                "language_code": user["language_code"],
-                "is_premium": user["is_premium"],
-                "is_bot": user["is_bot"],
-                "added_to_attachment_menu": user["added_to_attachment_menu"],
-                "created_at": user["created_at"],
-                "updated_at": user["updated_at"]
-            },
-        }
-    )
 
 @router.post("/api/checkData")
 async def check_data_handler(request: web.Request):

@@ -14,6 +14,7 @@ from aiogram.types import MenuButtonWebApp, WebAppInfo
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 
 load_dotenv(find_dotenv('.env'))
+
 TOKEN = os.environ.get("token")
 APP_BASE_URL = os.environ.get("APP_BASE_URL")
 

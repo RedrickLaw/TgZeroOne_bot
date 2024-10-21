@@ -1,5 +1,5 @@
 from aiogram import Bot, F, Router
-from aiogram.filters import Command, CommandStart
+from aiogram.filters import Command, CommandStart, CommandObject
 from aiogram.types import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
@@ -7,8 +7,15 @@ from aiogram.types import (
     Message,
     WebAppInfo,
 )
+from aiogram.utils.deep_linking import decode_payload
 
 my_router = Router()
+
+@my_router.message(CommandStart(deep_link=True))
+async def command_deep_link(message: Message, command: CommandObject):
+    args = command.args
+    payload = decode_payload(args)
+    await message.answer(f"Your payload: {payload}")
 
 @my_router.message(CommandStart())
 async def command_start(message: Message, bot: Bot, base_url: str):
@@ -17,7 +24,6 @@ async def command_start(message: Message, bot: Bot, base_url: str):
         menu_button=MenuButtonWebApp(text="Play", web_app=WebAppInfo(url=f"{base_url}")),
     )
     await message.answer("""Hi!\nSend me any type of message to start.\nOr just send /webview""")
-
 
 @my_router.message(Command("webview"))
 async def command_webview(message: Message, base_url: str):
