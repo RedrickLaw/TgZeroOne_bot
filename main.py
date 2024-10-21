@@ -29,7 +29,6 @@ def main():
     dispatcher["base_url"] = APP_BASE_URL
     dispatcher.startup.register(on_startup)
     dispatcher.include_router(my_router)
-
     app = Application()
     app["bot"] = bot
     app.cleanup_ctx.append(init_db)

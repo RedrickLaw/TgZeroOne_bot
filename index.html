@@ -186,10 +186,17 @@
 <body>
 <section>
     <span id="username"></span>
+    <div>
+        <span>Текущий уровень: </span>
+        <span id="current_level"></span>
+    </div>
     <button id="new_level_btn" onclick="new_level();">Повысить уровень</button>
     <button id="friends_btn" onclick="friends();">Друзья</button>
-    <span id="coins"></span>
-    <button id="claim_btn" onclick="claim();">Оставшееся время: {}</button>
+    <div>
+        <span>Монеты: </span>
+        <span id="coins"></span>
+    </div>
+    <button id="claim_btn" onclick="claim();">Оставшееся время: <span id="claim_time"></span></button>
     <pre><code id="webview_data"></code></pre>
     <div id="footer">
         <button id="main_view_btn" onclick="main_view();">Главный экран</button>
@@ -233,35 +240,76 @@
 <script>
     Telegram.WebApp.ready();
     Telegram.WebApp.setBottomBarColor("#00FFFF");
-    var initData = Telegram.WebApp.initData || '';
-    var initDataUnsafe = Telegram.WebApp.initDataUnsafe || {};
-    var user_id = initDataUnsafe["user"]["id"];
+    let initData = Telegram.WebApp.initData || '';
+    let initDataUnsafe = Telegram.WebApp.initDataUnsafe || {};
+    let user_id = initDataUnsafe["user"]["id"];
+    let claim_time;
 
     $('#username').text(initDataUnsafe["user"]["first_name"] + ' ' + initDataUnsafe["user"]["last_name"]);
-    $('#webview_data').html(JSON.stringify(initDataUnsafe, null, 2));
+    // $('#webview_data').html(JSON.stringify(initDataUnsafe, null, 2));
 
     if (initDataUnsafe.query_id && initData) {
-        $.ajax("/api/" + user_id, {
+        $.ajax("/user", {
             type: 'GET',
-            data: {_auth: initData},
+            data: initData,
             dataType: 'json',
             success: function (result) {
-                if (result.status == "ok") {
-                    alert("all good");
+                if (result.status) {
+                    $('#current_level').text(result.data.level);
+                    $('#coins').text(result.data.coins);
+                    claim_time = result.data.claim_time;
+                    // $('#webview_data').html(JSON.stringify(result, null, 2));
                 } else {
-                    alert(result.response.description);
+                    alert(result.description);
                 }
             },
             error: function (xhr) {
-                alert(result.response.description);
+                alert(result.description);
             }
         });
     }
-    function new_level(){
 
+    function updateTime() {
+        claim_time += 1;
+        $('#claim_time').html(claim_time);
+        if (claim_time > 15)
+            $('#claim_btn').prop('disabled', false);
+        else
+            $('#claim_btn').prop('disabled', true);
+    }
+
+    $(function() {
+        updateTime();
+        setInterval(updateTime, 1000);
+    });
+    
+    function new_level(){
+        
         return;
     }
-    
+
+    function claim(){
+        $.ajax("/game/coins", {
+            type: 'PATCH',
+            data: {
+                user_id : initDataUnsafe.user.id,
+                _auth : initData
+            },
+            dataType: 'json',
+            success: function (result) {
+                if (result.status) {
+                    claim_time = result.data.claim_time;
+                    $('#coins').text(result.data.coins);
+                } else {
+                    alert(result.description);
+                }
+            },
+            error: function (xhr) {
+                alert(result.description);
+            }
+        });
+    }
+
     function sendMessage(msg_id, with_webview) {
         if (!initDataUnsafe.query_id) {
             alert('WebViewQueryId not defined');
