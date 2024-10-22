@@ -17,6 +17,7 @@ from aiogram.types import (
 )
 from aiogram.utils.web_app import check_webapp_signature, safe_parse_webapp_init_data
 from aiogram.utils.deep_linking import create_start_link
+import handlers
 
 router = web.RouteTableDef()
 
@@ -53,7 +54,7 @@ def handle_json_error(
             raise
         except Exception as ex:
             return web.json_response(
-                {"status": "failed", "reason": str(ex)}, status=400
+                {"status": "failed", "description": str(ex)}, status=400
             )
     return handler
 
@@ -64,120 +65,110 @@ async def root_handler(request: web.Request):
 @router.get("/app")
 @handle_json_error
 async def api_get_user(request: web.Request) -> web.Response:
-    user_id = json.loads(request.query["user"])["id"]
     db = request.config_dict["DB"]
     bot: Bot = request.app["bot"]
-    if check_webapp_signature(bot.token, request.query_string):
-        async with db.execute(f"SELECT * FROM game WHERE user_id = '{user_id}';") as cursor:
-            user = await cursor.fetchone()
-        if user is None:
-            print(f"User_ID {user_id} doesn't exist")
-            await db.execute(f"INSERT INTO game (user_id) VALUES ('{user_id}');")
-            await db.commit()
-            return web.json_response(
-                {
-                    "status": True,
-                    "data": {
-                        "user_id": user_id,
-                        "level": 0,
-                        "coins": 0,
-                        "claim_time": 0 
-                    },
-                }
-            )    
+    referral_id = handlers.referral_id
+    handlers.referral_id = ""
+    try:
+        web_app_init_data = safe_parse_webapp_init_data(token=bot.token, init_data=request.query_string)
+    except ValueError:
+        return web.json_response({"ok": False, "err": "Unauthorized"}, status=401)
+    user_id = web_app_init_data.user.id
+    name = web_app_init_data.user.first_name + " " + web_app_init_data.user.last_name
+    async with db.execute(f"SELECT * FROM game WHERE user_id = '{user_id}';") as cursor:
+        user = await cursor.fetchone()
+    if user is None:
+        print(f"User_ID {user_id} doesn't exist")
+        await db.execute(f"INSERT INTO game (name, user_id, referral_id) VALUES ('{name}', '{user_id}', '{referral_id}');")
+        await db.commit()
         return web.json_response(
             {
                 "status": True,
                 "data": {
-                    "user_id": user["user_id"],
-                    "level": user["level"],
-                    "coins": user["coins"],
-                    "claim_time": calc_remaining_time(user["claim_time"])
+                    "user_id": user_id,
+                    "level": 0,
+                    "coins": 0,
+                    "claim_time": 0 
                 },
             }
         )
-    return web.json_response({"status": False, "description": "Unauthorized"}, status=401)
+    async with db.execute(f"SELECT name FROM game WHERE referral_id = '{user["user_id"]}';") as cursor:
+        friends_list = await cursor.fetchall()
+    friends = []
+    for row in friends_list:
+        friends.append(row["name"])
+    return web.json_response(
+        {
+            "status": True,
+            "data": {
+                "user_id": user["user_id"],
+                "level": user["level"],
+                "coins": user["coins"],
+                "claim_time": calc_remaining_time(user["claim_time"]),
+                "friends": friends
+            },
+        }
+    )
 
 @router.get("/app/ref")
 @handle_json_error
 async def api_add_referral(request: web.Request) -> web.Response:
-    user_id = json.loads(request.query["user"])["id"]
-    db = request.config_dict["DB"]
     bot: Bot = request.app["bot"]
-    link = await create_start_link(bot, 'foo', encode=True)
-    print(link)
-    # if check_webapp_signature(bot.token, request.query_string):
-    #     async with db.execute(f"SELECT * FROM game WHERE user_id = '{user_id}';") as cursor:
-    #         user = await cursor.fetchone()
-    #     if user is None:
-    #         print(f"User_ID {user_id} doesn't exist")
-    #         await db.execute(f"INSERT INTO game (user_id) VALUES ('{user_id}');")
-    #         await db.commit()
-    #         return web.json_response(
-    #             {
-    #                 "status": True,
-    #                 "data": {
-    #                     "user_id": user_id,
-    #                     "level": 0,
-    #                     "coins": 0,
-    #                     "claim_time": 0 
-    #                 },
-    #             }
-    #         )    
-    #     return web.json_response(
-    #         {
-    #             "status": True,
-    #             "data": {
-    #                 "user_id": user["user_id"],
-    #                 "level": user["level"],
-    #                 "coins": user["coins"],
-    #                 "claim_time": calc_remaining_time(user["claim_time"])
-    #             },
-    #         }
-    #     )
-    return web.json_response({"status": False, "description": "Unauthorized"}, status=401)
+    try:
+        web_app_init_data = safe_parse_webapp_init_data(token=bot.token, init_data=request.query_string)
+    except ValueError:
+        return web.json_response({"ok": False, "err": "Unauthorized"}, status=401)
+    link = await create_start_link(bot, web_app_init_data.user.id, encode=True)
+    return web.json_response(
+            {
+                "status": True,
+                "link": link
+            }
+        )
 
 @router.patch("/app/coins")
 @handle_json_error
 async def api_claim_coins(request: web.Request) -> web.Response:
     data = await request.post()
-    user_id = data["user_id"]
     db = request.config_dict["DB"]
     bot: Bot = request.app["bot"]
-    if check_webapp_signature(bot.token, data["_auth"]):
-        async with db.execute(f"SELECT * FROM game WHERE user_id = '{user_id}';") as cursor:
-            user = await cursor.fetchone()
-        if user is not None:
-            if calc_remaining_time(user["claim_time"]) > 15:
-                current_time = int(time.time())
-                await db.execute(f"UPDATE game SET coins = '{user["coins"] + 100}', claim_time = {current_time} WHERE user_id = '{user_id}';")
-                await db.commit()
-                return web.json_response(
-                    {
-                        "status": True,
-                        "data": {
-                            "coins": user["coins"] + 100,
-                            "claim_time": calc_remaining_time(current_time)
-                        },
-                    }
-                )  
+    try:
+        web_app_init_data = safe_parse_webapp_init_data(token=bot.token, init_data=data["_auth"])
+    except ValueError:
+        return web.json_response({"ok": False, "err": "Unauthorized"}, status=401)
+    user_id = web_app_init_data.user.id
+    async with db.execute(f"SELECT * FROM game WHERE user_id = '{user_id}';") as cursor:
+        user = await cursor.fetchone()
+    if user is not None:
+        if calc_remaining_time(user["claim_time"]) > 15:
+            current_time = int(time.time())
+            await db.execute(f"UPDATE game SET coins = '{user["coins"] + 100}', claim_time = {current_time} WHERE user_id = '{user_id}';")
+            await db.commit()
             return web.json_response(
                 {
                     "status": True,
                     "data": {
-                        "coins": user["coins"],
-                        "claim_time": calc_remaining_time(user["claim_time"])
+                        "coins": user["coins"] + 100,
+                        "claim_time": calc_remaining_time(current_time)
                     },
                 }
             )  
-        print(f"User_ID {user_id} doesn't exist")
         return web.json_response(
             {
                 "status": True,
-                "description": "User_ID {user_id} doesn't exist"
+                "data": {
+                    "coins": user["coins"],
+                    "claim_time": calc_remaining_time(user["claim_time"])
+                },
             }
-        )
-    return web.json_response({"status": False, "description": "Unauthorized"}, status=401)
+        )  
+    print(f"User_ID {user_id} doesn't exist")
+    return web.json_response(
+        {
+            "status": True,
+            "description": "User_ID {user_id} doesn't exist"
+        }
+    )
 
 # @router.delete("/api/{user_id}")
 # @handle_json_error

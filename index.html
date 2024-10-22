@@ -191,7 +191,7 @@
         <span id="current_level"></span>
     </div>
     <button id="new_level_btn" onclick="new_level();">Повысить уровень</button>
-    <button id="friends_btn" onclick="friends();">Друзья</button>
+    <button id="friends_btn" onclick="friends();">Пригласить друга</button>
     <div>
         <span>Монеты: </span>
         <span id="coins"></span>
@@ -200,6 +200,7 @@
     <pre><code id="webview_data"></code></pre>
     <div id="footer">
         <button id="main_view_btn" onclick="main_view();">Главный экран</button>
+        <button id="friends_view_btn" onclick="airdrop_view();">Друзья</button>
         <button id="tasks_view_btn" onclick="tasks_view();">Задания</button>
         <button id="airdrop_view_btn" onclick="airdrop_view();">Аирдроп</button>
     </div>
@@ -258,7 +259,7 @@
                     $('#current_level').text(result.data.level);
                     $('#coins').text(result.data.coins);
                     claim_time = result.data.claim_time;
-                    // $('#webview_data').html(JSON.stringify(result, null, 2));
+                    $('#webview_data').html(JSON.stringify(result.data.friends, null, 2));
                 } else {
                     alert(result.description);
                 }
@@ -295,7 +296,12 @@
             dataType: 'json',
             success: function (result) {
                 if (result.status) {
-                    $('#webview_data').html(JSON.stringify(result.link, null, 2));
+                    var tempTextarea = $('<textarea>');
+                    $('body').append(tempTextarea);
+                        tempTextarea.val(result.link).select();
+                        document.execCommand('copy');
+                        tempTextarea.remove();
+                    alert('Реферальная ссылка скопирована! ' + result.link)
                 } else {
                     alert(result.description);
                 }
@@ -310,7 +316,6 @@
         $.ajax("/app/coins", {
             type: 'PATCH',
             data: {
-                user_id : initDataUnsafe.user.id,
                 _auth : initData
             },
             dataType: 'json',
