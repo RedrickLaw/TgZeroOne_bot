@@ -245,7 +245,7 @@
     let initDataUnsafe = Telegram.WebApp.initDataUnsafe || {};
     let user_id = initDataUnsafe["user"]["id"];
     let claim_time;
-
+    $('#webview_data').html(JSON.stringify(initDataUnsafe, null, 2));
     $('#username').text(initDataUnsafe["user"]["first_name"] + ' ' + initDataUnsafe["user"]["last_name"]);
     // $('#webview_data').html(JSON.stringify(initDataUnsafe, null, 2));
 
@@ -259,7 +259,7 @@
                     $('#current_level').text(result.data.level);
                     $('#coins').text(result.data.coins);
                     claim_time = result.data.claim_time;
-                    $('#webview_data').html(JSON.stringify(result.data.friends, null, 2));
+                    // $('#webview_data').html(JSON.stringify(result.data.friends, null, 2));
                 } else {
                     alert(result.description);
                 }
