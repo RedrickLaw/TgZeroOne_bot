@@ -76,6 +76,8 @@ async def api_get_user(request: web.Request) -> web.Response:
         return web.json_response({"ok": False, "description": "Unauthorized"}, status=401)
     user_id = web_app_init_data.user.id
     name = web_app_init_data.user.first_name + " " + web_app_init_data.user.last_name
+    link = await create_start_link(bot, web_app_init_data.user.id, encode=True)
+    link = link.replace("?start", "/app?startapp")
     async with db.execute(f"SELECT * FROM game WHERE user_id = '{user_id}';") as cursor:
         user = await cursor.fetchone()
     if user is None:
@@ -93,7 +95,8 @@ async def api_get_user(request: web.Request) -> web.Response:
                     "user_id": user_id,
                     "level": 0,
                     "coins": 0,
-                    "claim_time": 0 
+                    "claim_time": 0,
+                    "link": link
                 },
             }
         )
@@ -113,6 +116,7 @@ async def api_get_user(request: web.Request) -> web.Response:
                 "level": user["level"],
                 "coins": user["coins"],
                 "claim_time": claim_time,
+                "link": link,
                 "friends": friends
             },
         }

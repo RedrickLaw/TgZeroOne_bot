@@ -191,7 +191,8 @@
         <span id="current_level"></span>
     </div>
     <button id="new_level_btn" onclick="new_level();">Повысить уровень</button>
-    <button id="friends_btn" onclick="friends();">Пригласить друга</button>
+    <button id="friends_btn" onclick="copyToClipboard();">Скопировать ссылку</button>
+    <input id="referral_link" style="width: 100%;" type="text" onclick="copyToClipboard();"/>
     <div>
         <span>Монеты: </span>
         <span id="coins"></span>
@@ -261,6 +262,7 @@
                     $('#current_level').text(result.data.level);
                     $('#coins').text(result.data.coins);
                     claim_time = result.data.claim_time;
+                    $('#referral_link').val(result.data.link);
                     $('#webview_data').html(JSON.stringify(result.data.friends, null, 2));
                 } else {
                     alert(result.description);
@@ -291,66 +293,26 @@
         
         return;
     }
-
-    function copyToClipboard(string) {
-        let textarea;
-        let result;
-
-        try {
-            textarea = document.createElement('textarea');
-            textarea.setAttribute('readonly', true);
-            textarea.setAttribute('contenteditable', true);
-            textarea.style.position = 'fixed'; // prevent scroll from jumping to the bottom when focus is set.
-            textarea.value = string;
-            document.body.appendChild(textarea);
-            textarea.select();
-            const range = document.createRange();
-            range.selectNodeContents(textarea);
-            const sel = window.getSelection();
-            sel.removeAllRanges();
-            sel.addRange(range);
-            textarea.setSelectionRange(0, textarea.value.length);
-            result = document.execCommand('copy');
-        } catch (err) {
-            console.error(err);
-            result = null;
-        } finally {
-            document.body.removeChild(textarea);
+    function copyToClipboard() {
+        const input = document.getElementById('referral_link');
+        
+        if(isOS()) {
+            let range = document.createRange();
+            range.selectNodeContents(input);
+            let selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            input.setSelectionRange(0, 999999);
+        } else {
+            input.select()
         }
-
-        // manual copy fallback using prompt
-        if (!result) {
-            const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-            const copyHotkey = isMac ? '⌘C' : 'CTRL+C';
-            result = prompt(`Press ${copyHotkey}`, string); // eslint-disable-line no-alert
-            if (!result) {
-            return false;
-            }
-        }
-        return true;
+        document.execCommand("copy");
+        input.blur();
+        alert("Реферальная ссылка скопирована.")
     }
-    
-    function friends(){
-        $.ajax("/app/ref", {
-            type: 'GET',
-            data: initData,
-            dataType: 'json',
-            success: function (result) {
-                if (result.status) {
-                    copyToClipboard(result.link);
-                    // $('body').append(tempTextarea);
-                    //     tempTextarea.val(result.link).select();
-                    //     document.execCommand('copy');
-                    //     tempTextarea.remove();
-                    alert('Реферальная ссылка скопирована! ' + result.link)
-                } else {
-                    alert(result.description);
-                }
-            },
-            error: function (xhr) {
-                alert(result.description);
-            }
-        });
+
+    function isOS() {
+        return navigator.userAgent.match(/ipad|iphone/i);
     }
 
     function claim(){
