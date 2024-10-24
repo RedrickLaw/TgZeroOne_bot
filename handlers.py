@@ -7,24 +7,8 @@ from aiogram.types import (
     Message,
     WebAppInfo,
 )
-from aiogram.utils.deep_linking import decode_payload
 
 my_router = Router()
-referral_id = ""
-
-@my_router.message(CommandStart(deep_link=True))
-async def command_deep_link(message: Message, command: CommandObject, base_url: str):
-    args = command.args
-    global referral_id
-    referral_id = decode_payload(args)
-    await message.answer(
-        "Open App",
-        reply_markup=InlineKeyboardMarkup(
-            inline_keyboard=[
-                [InlineKeyboardButton(text="Play!", web_app=WebAppInfo(url=f"{base_url}"))]
-            ]
-        ),
-    )
 
 @my_router.message(CommandStart())
 async def command_start(message: Message, bot: Bot, base_url: str):

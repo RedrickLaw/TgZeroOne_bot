@@ -245,21 +245,23 @@
     let initDataUnsafe = Telegram.WebApp.initDataUnsafe || {};
     let user_id = initDataUnsafe["user"]["id"];
     let claim_time;
-    $('#webview_data').html(JSON.stringify(initDataUnsafe, null, 2));
     $('#username').text(initDataUnsafe["user"]["first_name"] + ' ' + initDataUnsafe["user"]["last_name"]);
     // $('#webview_data').html(JSON.stringify(initDataUnsafe, null, 2));
 
-    if (initDataUnsafe.query_id && initData) {
+    if (initData) {
         $.ajax("/app", {
             type: 'GET',
-            data: initData,
+            data: {
+                start_param: initDataUnsafe["start_param"],
+                _auth: initData
+            },
             dataType: 'json',
             success: function (result) {
                 if (result.status) {
                     $('#current_level').text(result.data.level);
                     $('#coins').text(result.data.coins);
                     claim_time = result.data.claim_time;
-                    // $('#webview_data').html(JSON.stringify(result.data.friends, null, 2));
+                    $('#webview_data').html(JSON.stringify(result.data.friends, null, 2));
                 } else {
                     alert(result.description);
                 }
@@ -271,12 +273,13 @@
     }
 
     function updateTime() {
-        claim_time += 1;
-        $('#claim_time').html(claim_time);
-        if (claim_time > 15)
+        claim_time -= 1;
+        if (claim_time <= 0) {
             $('#claim_btn').prop('disabled', false);
-        else
+            claim_time = 0;
+        } else
             $('#claim_btn').prop('disabled', true);
+            $('#claim_time').html(claim_time);
     }
 
     $(function() {
@@ -289,6 +292,44 @@
         return;
     }
 
+    function copyToClipboard(string) {
+        let textarea;
+        let result;
+
+        try {
+            textarea = document.createElement('textarea');
+            textarea.setAttribute('readonly', true);
+            textarea.setAttribute('contenteditable', true);
+            textarea.style.position = 'fixed'; // prevent scroll from jumping to the bottom when focus is set.
+            textarea.value = string;
+            document.body.appendChild(textarea);
+            textarea.select();
+            const range = document.createRange();
+            range.selectNodeContents(textarea);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+            textarea.setSelectionRange(0, textarea.value.length);
+            result = document.execCommand('copy');
+        } catch (err) {
+            console.error(err);
+            result = null;
+        } finally {
+            document.body.removeChild(textarea);
+        }
+
+        // manual copy fallback using prompt
+        if (!result) {
+            const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+            const copyHotkey = isMac ? '⌘C' : 'CTRL+C';
+            result = prompt(`Press ${copyHotkey}`, string); // eslint-disable-line no-alert
+            if (!result) {
+            return false;
+            }
+        }
+        return true;
+    }
+    
     function friends(){
         $.ajax("/app/ref", {
             type: 'GET',
@@ -296,11 +337,11 @@
             dataType: 'json',
             success: function (result) {
                 if (result.status) {
-                    var tempTextarea = $('<textarea>');
-                    $('body').append(tempTextarea);
-                        tempTextarea.val(result.link).select();
-                        document.execCommand('copy');
-                        tempTextarea.remove();
+                    copyToClipboard(result.link);
+                    // $('body').append(tempTextarea);
+                    //     tempTextarea.val(result.link).select();
+                    //     document.execCommand('copy');
+                    //     tempTextarea.remove();
                     alert('Реферальная ссылка скопирована! ' + result.link)
                 } else {
                     alert(result.description);
